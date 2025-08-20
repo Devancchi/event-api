@@ -7,6 +7,10 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
+/**
+ * @authenticated
+ * @header Authorization Bearer {token}
+ */
 class AuthController extends Controller
 {
     public function register(Request $request)

@@ -14,25 +14,27 @@ class EventController extends Controller
         $query = Event::query();
 
         // Filter by status
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+        if ($request->filled('filter.status')) {
+            $query->where('status', $request->input('filter.status'));
         }
 
         // Search by title
-        if ($request->has('title')) {
-            $query->where('title', 'like', '%' . $request->title . '%');
+        if ($request->filled('search')) {
+            $query->where('title', 'like', '%' . $request->search . '%');
         }
 
-        // Sorting (default: ascending)
-        if ($request->has('sort')) {
-            $sort = $request->sort == 'desc' ? 'desc' : 'asc';
-            $query->orderBy('start_datetime', $sort);
-        }
+        // Sorting
+        $sortBy = $request->get('sort_by', 'start_datetime');
+        $sortOrder = $request->get('sort_order', 'asc');
+        $query->orderBy($sortBy, $sortOrder);
 
-        $events = $query->paginate(20);
+        // Pagination
+        $perPage = $request->get('per_page', 20);
+        $events = $query->paginate($perPage);
 
         return response()->json($events);
     }
+
 
     // GET /events/{id}
     public function show($id)
@@ -74,7 +76,6 @@ class EventController extends Controller
         $event = Event::findOrFail($id);
         $user = Auth::user();
 
-        // Organizer hanya boleh update event miliknya
         if ($user->role !== 'admin' && $event->organizer_id !== $user->id) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
@@ -99,7 +100,6 @@ class EventController extends Controller
         $event = Event::findOrFail($id);
         $user = Auth::user();
 
-        // Organizer hanya boleh delete event miliknya
         if ($user->role !== 'admin' && $event->organizer_id !== $user->id) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
