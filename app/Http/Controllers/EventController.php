@@ -29,7 +29,7 @@ class EventController extends Controller
             $query->orderBy('start_datetime', $sort);
         }
 
-        $events = $query->paginate(10);
+        $events = $query->paginate(20);
 
         return response()->json($events);
     }
