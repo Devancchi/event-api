@@ -1,10 +1,5 @@
 # Dokumentasi Endpoint API Event Management
 
-Berikut adalah daftar endpoint API backend Anda yang siap dieksekusi, mencakup fitur autentikasi, manajemen event (CRUD), serta fungsionalitas pencarian, filter, sorting, dan paginasi.
-
-**Base URL Autentikasi**: `http://127.0.0.1:8000/api/auth`
-**Base URL Event**: `http://127.0.0.1:8000/api/events`
-
 ---
 
 ## 1. Autentikasi dan Profil Pengguna
