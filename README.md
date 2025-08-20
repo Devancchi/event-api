@@ -1,61 +1,234 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Dokumentasi Endpoint API Event Management
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+---
 
-## About Laravel
+## 1. Autentikasi dan Profil Pengguna
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Semua endpoint yang memerlukan autentikasi (`Bearer Token`) harus menyertakan header `Authorization: Bearer <token_jwt_anda>`.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 1.1 Login Pengguna
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+*   **Endpoint**: `/auth/login`
+*   **Metode**: `POST`
+*   **Deskripsi**: Mengautentikasi pengguna dan mengembalikan token JWT. Endpoint ini memiliki **rate limiting** (misal, 5 permintaan per menit per IP) untuk mencegah *brute-force*.
+*   **Akses**: Publik
+*   **Request Body (JSON)**:
+    ```json
+    {
+        "email": "user@example.com",
+        "password": "your_password"
+    }
+    ```
+*   **Contoh Response (Status 200 OK)**:
+    ```json
+    {
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "user": {
+            "id": 1,
+            "name": "Nama Pengguna",
+            "email": "user@example.com",
+            "role": "organizer" // atau "admin"
+        }
+    }
+    ```
 
-## Learning Laravel
+### 1.2 Logout Pengguna
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+*   **Endpoint**: `/auth/logout`
+*   **Metode**: `POST`
+*   **Deskripsi**: Membatalkan sesi pengguna (misalnya, membatalkan token JWT di sisi server).
+*   **Akses**: Terotentikasi (`admin`, `organizer`)
+*   **Headers**:
+    *   `Authorization: Bearer <token_jwt_anda>`
+*   **Contoh Response (Status 200 OK)**:
+    ```json
+    {
+        "message": "Successfully logged out"
+    }
+    ```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 1.3 Mendapatkan Profil Pengguna
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+*   **Endpoint**: `/auth/me`
+*   **Metode**: `GET`
+*   **Deskripsi**: Mengambil data profil pengguna yang sedang login.
+*   **Akses**: Terotentikasi (`admin`, `organizer`)
+*   **Headers**:
+    *   `Authorization: Bearer <token_jwt_anda>`
+*   **Contoh Response (Status 200 OK)**:
+    ```json
+    {
+        "id": 1,
+        "name": "Nama Pengguna",
+        "email": "user@example.com",
+        "role": "organizer"
+    }
+    ```
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 2. Manajemen Event
 
-### Premium Partners
+### 2.1 Membuat Event Baru
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+*   **Endpoint**: `/events`
+*   **Metode**: `POST`
+*   **Deskripsi**: Membuat event baru. **Validasi input** diterapkan.
+*   **Akses**: Hanya `organizer` atau `admin`.
+*   **Headers**:
+    *   `Authorization: Bearer <token_jwt_anda>`
+    *   `Content-Type: application/json`
+*   **Request Body (JSON)**:
+    ```json
+    {
+        "title": "Nama Event Anda",
+        "description": "Deskripsi singkat event.",
+        "venue": "Lokasi Event",
+        "start_datetime": "2024-12-25T09:00:00Z",
+        "end_datetime": "2024-12-25T17:00:00Z",
+        "status": "draft" // atau "published"
+    }
+    ```
+*   **Contoh Response (Status 201 Created)**:
+    ```json
+    {
+        "id": 101,
+        "title": "Nama Event Anda",
+        "description": "Deskripsi singkat event.",
+        "venue": "Lokasi Event",
+        "start_datetime": "2024-12-25T09:00:00Z",
+        "end_datetime": "2024-12-25T17:00:00Z",
+        "status": "draft",
+        "organizer_id": 1 // ID organizer yang membuat event
+    }
+    ```
 
-## Contributing
+### 2.2 Mengambil Daftar Event
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+*   **Endpoint**: `/events`
+*   **Metode**: `GET`
+*   **Deskripsi**: Mengambil daftar event dengan dukungan **pencarian**, **filter**, **sorting**, dan **paginasi**.
+*   **Akses**: Publik.
+*   **Query Parameters (Opsional)**:
+    *   `search=<kata_kunci>`: Mencari event berdasarkan `title`.
+    *   `filter[status]=<status>`: Memfilter event berdasarkan `status` (misal, `published`). Hanya event dengan status `published` yang akan ditampilkan untuk akses publik.
+    *   `sort_by=start_datetime`: Mengurutkan berdasarkan `start_datetime` (kolom yang didukung untuk sorting).
+    *   `sort_order=asc|desc`: Urutan ascending (`asc`) atau descending (`desc`). Defaultnya `asc`.
+    *   `page=<nomor_halaman>`: Nomor halaman untuk paginasi (default 1).
+    *   `per_page=<jumlah_item>`: Jumlah item per halaman (default 10).
+*   **Contoh Permintaan**:
+    *   `GET http://127.0.0.1:8000/api/events?search=konferensi&filter[status]=published&sort_by=start_datetime&sort_order=desc&page=1&per_page=5`
+*   **Contoh Response (Status 200 OK)**:
+    ```json
+    {
+        "data": [
+            {
+                "id": 102,
+                "title": "Konferensi Blockchain 2024",
+                "description": "Pembahasan teknologi blockchain terkini.",
+                "venue": "Convention Center",
+                "start_datetime": "2024-11-15T09:00:00Z",
+                "end_datetime": "2024-11-15T18:00:00Z",
+                "status": "published",
+                "organizer_id": 2
+            },
+            // ... event lainnya
+        ],
+        "meta": {
+            "current_page": 1,
+            "last_page": 5,
+            "per_page": 5,
+            "total": 23
+        }
+    }
+    ```
 
-## Code of Conduct
+### 2.3 Mengambil Detail Event
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+*   **Endpoint**: `/events/:id`
+*   **Metode**: `GET`
+*   **Deskripsi**: Mengambil detail satu event berdasarkan ID.
+*   **Akses**: Publik.
+*   **Path Parameter**:
+    *   `id`: ID unik event (contoh: `101`)
+*   **Contoh Permintaan**:
+    *   `GET http://127.0.0.1:8000/api/events/101`
+*   **Contoh Response (Status 200 OK)**:
+    ```json
+    {
+        "id": 101,
+        "title": "Nama Event Anda",
+        "description": "Deskripsi singkat event.",
+        "venue": "Lokasi Event",
+        "start_datetime": "2024-12-25T09:00:00Z",
+        "end_datetime": "2024-12-25T17:00:00Z",
+        "status": "draft",
+        "organizer_id": 1
+    }
+    ```
 
-## Security Vulnerabilities
+### 2.4 Memperbarui Event
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+*   **Endpoint**: `/events/:id`
+*   **Metode**: `PUT`
+*   **Deskripsi**: Memperbarui detail event berdasarkan ID. **Validasi input** diterapkan.
+*   **Akses**: Hanya `owner organizer` atau `admin`. Organizer hanya bisa mengubah event yang dibuatnya sendiri.
+*   **Headers**:
+    *   `Authorization: Bearer <token_jwt_anda>`
+    *   `Content-Type: application/json`
+*   **Path Parameter**:
+    *   `id`: ID unik event yang akan diperbarui (contoh: `101`)
+*   **Request Body (JSON)**:
+    *   Bisa berisi sebagian atau seluruh bidang event yang ingin diperbarui.
+    ```json
+    {
+        "title": "Nama Event Baru",
+        "status": "published"
+    }
+    ```
+*   **Contoh Response (Status 200 OK)**:
+    ```json
+    {
+        "id": 101,
+        "title": "Nama Event Baru",
+        "description": "Deskripsi singkat event.",
+        "venue": "Lokasi Event",
+        "start_datetime": "2024-12-25T09:00:00Z",
+        "end_datetime": "2024-12-25T17:00:00Z",
+        "status": "published",
+        "organizer_id": 1
+    }
+    ```
 
-## License
+### 2.5 Menghapus Event
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+*   **Endpoint**: `/events/:id`
+*   **Metode**: `DELETE`
+*   **Deskripsi**: Menghapus event berdasarkan ID.
+*   **Akses**: Hanya `owner organizer` atau `admin`. Organizer hanya bisa menghapus event yang dibuatnya sendiri.
+*   **Headers**:
+    *   `Authorization: Bearer <token_jwt_anda>`
+*   **Path Parameter**:
+    *   `id`: ID unik event yang akan dihapus (contoh: `101`)
+*   **Contoh Response (Status 204 No Content)**:
+    *   Tidak ada konten yang dikembalikan, mengindikasikan penghapusan berhasil.
+
+---
+
+## 3. Utilitas
+
+### 3.1 Health Check
+
+*   **Endpoint**: `/health`
+*   **Metode**: `GET`
+*   **Deskripsi**: Endpoint sederhana untuk memeriksa status kesehatan aplikasi.
+*   **Akses**: Publik
+*   **Contoh Response (Status 200 OK)**:
+    ```json
+    {
+        "status": "ok",
+        "timestamp": "2023-10-27T10:30:00Z"
+    }
+    ```
+
+---
