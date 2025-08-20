@@ -1,361 +1,192 @@
----
 
-# Event Management API
+````markdown
+# REST API Event Management
 
-API backend untuk manajemen event, termasuk autentikasi, CRUD event, filter, pencarian, dan paginasi.
-
-**Base URL:** `http://127.0.0.1:8000/api`
+REST API untuk manajemen event berbasis Laravel 10 dengan autentikasi JWT. Fitur utama termasuk registrasi/login, RBAC, CRUD Event, filter, search, sorting, dan pagination.
 
 ---
 
-## 1. Autentikasi dan Profil Pengguna
+## 🔹 Stack Teknologi
 
-Semua endpoint yang membutuhkan autentikasi harus menyertakan header:
+- PHP 8+
+- Laravel 10
+- MySQL
+- JWT Authentication (`tymon/jwt-auth`)
+- Postman / cURL untuk testing
 
-```
-Authorization: Bearer <token_jwt_anda>
-```
+---
 
-### 1.1 Register (Daftar Pengguna Baru)
-
-* **Endpoint:** `/auth/register`
-* **Method:** `POST`
-* **Akses:** Publik
-* **Request Body (JSON):**
-
-```json
-{
-  "name": "Nama Pengguna",
-  "email": "user@example.com",
-  "password": "password123",
-  "role": "organizer" 
-}
-```
-
-* **Contoh Request `curl`:**
+## 📥 Clone Project
 
 ```bash
-curl -X POST http://127.0.0.1:8000/api/auth/register \
--H "Content-Type: application/json" \
--d '{"name":"Nama Pengguna","email":"user@example.com","password":"password123","role":"organizer"}'
-```
-
-* **Response (201 Created)**:
-
-```json
-{
-  "id": 1,
-  "name": "Nama Pengguna",
-  "email": "user@example.com",
-  "role": "organizer"
-}
-```
+git clone <repository_url>
+cd <nama_folder_project>
+````
 
 ---
 
-### 1.2 Login
+## ⚙️ Setup Project
 
-* **Endpoint:** `/auth/login`
-* **Method:** `POST`
-* **Akses:** Publik
-* **Rate Limit:** 5 permintaan/menit per IP
-* **Request Body (JSON):**
+1. **Install dependencies**
 
-```json
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
+```bash
+composer install
 ```
 
-* **Contoh Request `curl`:**
+2. **Copy environment file & konfigurasi database**
+
+```bash
+cp .env.example .env
+```
+
+* Sesuaikan database:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=event_db
+DB_USERNAME=root
+DB_PASSWORD=secret
+```
+
+3. **Generate application key**
+
+```bash
+php artisan key:generate
+```
+
+4. **Generate JWT secret**
+
+```bash
+php artisan jwt:secret
+```
+
+5. **Migrate database & seed data**
+
+```bash
+php artisan migrate --seed
+```
+
+* Seed akan membuat minimal 1 admin, 2 organizer, dan 1 event contoh.
+
+6. **Jalankan server**
+
+```bash
+php artisan serve
+```
+
+Server akan berjalan di: `http://127.0.0.1:8000`
+
+---
+
+## 🛠 Struktur Endpoint
+
+Base URL: `http://127.0.0.1:8000/api`
+
+### 1. Autentikasi
+
+| Endpoint       | Method | Auth | Deskripsi                  |
+| -------------- | ------ | ---- | -------------------------- |
+| /auth/register | POST   | ❌    | Registrasi user baru       |
+| /auth/login    | POST   | ❌    | Login & dapatkan token JWT |
+| /auth/me       | GET    | ✅    | Profil user yang login     |
+| /auth/logout   | POST   | ✅    | Logout & invalid token     |
+
+**Contoh Request Login**
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/auth/login \
 -H "Content-Type: application/json" \
--d '{"email":"user@example.com","password":"password123"}'
+-d '{"email":"admin@example.com","password":"password"}'
 ```
 
-* **Response (200 OK)**:
+**Response**
 
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": 1,
-    "name": "Nama Pengguna",
-    "email": "user@example.com",
-    "role": "organizer"
-  }
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "token_type": "bearer",
+    "expires_in": 3600
 }
 ```
 
 ---
 
-### 1.3 Logout
+### 2. Event CRUD
 
-* **Endpoint:** `/auth/logout`
+| Endpoint     | Method | Auth                | Deskripsi                                  |
+| ------------ | ------ | ------------------- | ------------------------------------------ |
+| /events      | GET    | ❌                   | List event + search/filter/sort/pagination |
+| /events/{id} | GET    | ❌                   | Detail event                               |
+| /events      | POST   | ✅ (admin/organizer) | Create event                               |
+| /events/{id} | PUT    | ✅ (owner/admin)     | Update event                               |
+| /events/{id} | DELETE | ✅ (owner/admin)     | Delete event                               |
 
-* **Method:** `POST`
-
-* **Akses:** Terotentikasi
-
-* **Headers:** `Authorization: Bearer <token_jwt_anda>`
-
-* **Contoh Request `curl`:**
+**Contoh Request GET Event List**
 
 ```bash
-curl -X POST http://127.0.0.1:8000/api/auth/logout \
--H "Authorization: Bearer <token_jwt_anda>"
+curl "http://127.0.0.1:8000/api/events?search=konferensi&filter[status]=published&sort_by=start_datetime&sort_order=desc&page=1&per_page=5"
 ```
 
-* **Response (200 OK)**:
-
-```json
-{
-  "message": "Successfully logged out"
-}
-```
-
----
-
-### 1.4 Profil Pengguna
-
-* **Endpoint:** `/auth/me`
-
-* **Method:** `GET`
-
-* **Akses:** Terotentikasi
-
-* **Headers:** `Authorization: Bearer <token_jwt_anda>`
-
-* **Contoh Request `curl`:**
-
-```bash
-curl -X GET http://127.0.0.1:8000/api/auth/me \
--H "Authorization: Bearer <token_jwt_anda>"
-```
-
-* **Response (200 OK)**:
-
-```json
-{
-  "id": 1,
-  "name": "Nama Pengguna",
-  "email": "user@example.com",
-  "role": "organizer"
-}
-```
-
----
-
-## 2. Event Management
-
-### 2.1 Membuat Event Baru
-
-* **Endpoint:** `/events`
-* **Method:** `POST`
-* **Akses:** `admin` / `organizer`
-* **Headers:**
-
-```
-Authorization: Bearer <token_jwt_anda>
-Content-Type: application/json
-```
-
-* **Request Body (JSON)**:
-
-```json
-{
-  "title": "Nama Event",
-  "description": "Deskripsi singkat event",
-  "venue": "Lokasi Event",
-  "start_datetime": "2025-05-01T09:00:00Z",
-  "end_datetime": "2025-08-31T18:00:00Z",
-  "status": "draft"
-}
-```
-
-* **Contoh Request `curl`:**
+**Contoh Request Create Event**
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/events \
+-H "Authorization: Bearer <token>" \
 -H "Content-Type: application/json" \
--H "Authorization: Bearer <token_jwt_anda>" \
--d '{"title":"Nama Event","description":"Deskripsi","venue":"Lokasi","start_datetime":"2025-05-01T09:00:00Z","end_datetime":"2025-08-31T18:00:00Z","status":"draft"}'
+-d '{
+    "title": "Workshop Laravel",
+    "description": "Belajar CRUD & JWT",
+    "venue": "Online",
+    "start_datetime": "2025-09-01 09:00:00",
+    "end_datetime": "2025-09-01 17:00:00",
+    "status": "draft"
+}'
 ```
 
-* **Response (201 Created)**:
+---
+
+### 3. Health Check
+
+| Endpoint | Method | Auth | Deskripsi      |
+| -------- | ------ | ---- | -------------- |
+| /health  | GET    | ❌    | Cek status API |
+
+```bash
+curl http://127.0.0.1:8000/api/health
+```
+
+Response:
 
 ```json
 {
-  "id": 101,
-  "title": "Nama Event",
-  "description": "Deskripsi singkat event",
-  "venue": "Lokasi Event",
-  "start_datetime": "2025-05-01T09:00:00Z",
-  "end_datetime": "2025-08-31T18:00:00Z",
-  "status": "draft",
-  "organizer_id": 1
+    "status": "ok",
+    "message": "API is healthy"
 }
 ```
 
 ---
 
-### 2.2 Daftar Event (Public)
+## 🔒 Role & Permission
 
-* **Endpoint:** `/events`
-
-* **Method:** `GET`
-
-* **Akses:** Publik
-
-* **Query Parameters**:
-
-```
-search=<kata_kunci>             # cari di title
-filter[status]=published        # filter status
-sort_by=start_datetime          # kolom untuk sorting
-sort_order=asc|desc             # urutan sorting
-page=1                          # nomor halaman
-per_page=5                       # jumlah item per halaman
-```
-
-* **Contoh Request `curl`:**
-
-```bash
-curl -X GET "http://127.0.0.1:8000/api/events?search=konferensi&filter[status]=published&sort_by=start_datetime&sort_order=desc&page=1&per_page=5"
-```
-
-* **Response (200 OK)**:
-
-```json
-{
-  "current_page": 1,
-  "data": [
-    {
-      "id": 102,
-      "title": "Konferensi Blockchain 2024",
-      "description": "Pembahasan teknologi blockchain terkini.",
-      "venue": "Convention Center",
-      "start_datetime": "2024-11-15T09:00:00Z",
-      "end_datetime": "2024-11-15T18:00:00Z",
-      "status": "published",
-      "organizer_id": 2
-    }
-  ],
-  "per_page": 5,
-  "total": 23
-}
-```
+* **Admin**: full access ke semua event
+* **Organizer**: hanya bisa create/update/delete event miliknya sendiri
+* **Publik**: hanya bisa lihat daftar dan detail event yang `published`
 
 ---
 
-### 2.3 Detail Event (Public)
+## ⚡ Tips Testing
 
-* **Endpoint:** `/events/:id`
-
-* **Method:** `GET`
-
-* **Akses:** Publik
-
-* **Contoh Request `curl`:**
-
-```bash
-curl -X GET http://127.0.0.1:8000/api/events/101
-```
-
-* **Response (200 OK)**:
-
-```json
-{
-  "id": 101,
-  "title": "Nama Event",
-  "description": "Deskripsi singkat event",
-  "venue": "Lokasi Event",
-  "start_datetime": "2025-05-01T09:00:00Z",
-  "end_datetime": "2025-08-31T18:00:00Z",
-  "status": "draft",
-  "organizer_id": 1
-}
-```
+* Gunakan **Postman** untuk mempermudah testing query parameters (`search`, `filter[status]`, `sort_by`, `sort_order`, `page`, `per_page`)
+* Sertakan **header Authorization** untuk endpoint yang membutuhkan token JWT
+* Cek validasi input (misal tanggal mulai > tanggal selesai akan error)
 
 ---
 
-### 2.4 Memperbarui Event
+## 📌 Catatan
 
-* **Endpoint:** `/events/:id`
-
-* **Method:** `PUT`
-
-* **Akses:** Hanya `owner organizer` / `admin`
-
-* **Contoh Request `curl`:**
-
-```bash
-curl -X PUT http://127.0.0.1:8000/api/events/101 \
--H "Content-Type: application/json" \
--H "Authorization: Bearer <token_jwt_anda>" \
--d '{"title":"Updated Event","status":"published"}'
-```
-
-* **Response (200 OK)**: Sama format seperti detail event.
-
----
-
-### 2.5 Menghapus Event
-
-* **Endpoint:** `/events/:id`
-
-* **Method:** `DELETE`
-
-* **Akses:** Hanya `owner organizer` / `admin`
-
-* **Contoh Request `curl`:**
-
-```bash
-curl -X DELETE http://127.0.0.1:8000/api/events/101 \
--H "Authorization: Bearer <token_jwt_anda>"
-```
-
-* **Response (204 No Content)**: Tidak ada konten, penghapusan berhasil.
-
----
-
-## 3. Utilitas
-
-### 3.1 Health Check
-
-* **Endpoint:** `/health`
-
-* **Method:** `GET`
-
-* **Akses:** Publik
-
-* **Contoh Request `curl`:**
-
-```bash
-curl -X GET http://127.0.0.1:8000/api/health
-```
-
-* **Response (200 OK)**:
-
-```json
-{
-  "status": "ok"
-}
-```
-
----
-
-### Catatan
-
-* **RBAC**: `organizer` hanya bisa mengelola event miliknya sendiri, `admin` bisa semua.
-* **Validasi Input**: Semua input harus divalidasi di server.
-* \*\*Seed Data
-
-
-\*\*: Minimal 1 admin, 2 organizer, 1 event agar API bisa langsung diuji.
-
----
-
+* Pastikan `php artisan migrate --seed` dijalankan agar ada user dan event contoh
+* Login user admin/organizer dari seed untuk mencoba fitur protected routes
+* Semua endpoint menggunakan **JSON** request & response
+* Rate limiting login: maksimal 5 request per menit
