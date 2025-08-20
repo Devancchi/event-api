@@ -9,7 +9,7 @@ REST API untuk manajemen event berbasis Laravel 10 dengan autentikasi JWT. Fitur
 ## 🔹 Stack Teknologi
 
 - PHP 8+
-- Laravel 10
+- Laravel 12
 - MySQL
 - JWT Authentication (`tymon/jwt-auth`)
 - Postman / cURL untuk testing
