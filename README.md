@@ -65,7 +65,7 @@ php artisan jwt:secret
 5. **Migrate database & seed data**
 
 ```bash
-php artisan migrate --seed
+php artisan db:seed
 ```
 
 * Seed akan membuat minimal 1 admin, 2 organizer, dan 1 event contoh.
