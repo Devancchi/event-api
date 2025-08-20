@@ -1,7 +1,3 @@
-Baik, karena Anda sudah menyelesaikan fitur wajibnya kecuali yang opsional, mari kita buat dokumentasi endpoint yang lebih ringkas dan fokus pada cara eksekusinya, dengan menggunakan base URL yang Anda berikan.
-
----
-
 # Dokumentasi Endpoint API Event Management
 
 Berikut adalah daftar endpoint API backend Anda yang siap dieksekusi, mencakup fitur autentikasi, manajemen event (CRUD), serta fungsionalitas pencarian, filter, sorting, dan paginasi.
@@ -241,11 +237,3 @@ Semua endpoint yang memerlukan autentikasi (`Bearer Token`) harus menyertakan he
     ```
 
 ---
-
-**Catatan Penting**:
-
-*   **Role-Based Access Control (RBAC)**: Pastikan implementasi Anda sudah sesuai dengan aturan RBAC, di mana `organizer` hanya bisa mengelola event miliknya sendiri, dan `admin` memiliki akses penuh.
-*   **Validasi & Keamanan**: Semua input yang dikirim ke API harus divalidasi dengan benar. Pastikan juga pencegahan SQL Injection sudah diterapkan (misalnya, dengan menggunakan ORM atau *parameterized queries*).
-*   **Seed Data**: Ingat untuk menyertakan seed data minimal (1 admin, 2 organizer, 1 event) agar API dapat langsung diuji.
-
-Dokumentasi ini mencakup semua endpoint wajib yang disebutkan dalam sumber yang Anda berikan.
