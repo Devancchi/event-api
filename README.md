@@ -9,7 +9,7 @@ REST API untuk manajemen event berbasis Laravel 10 dengan autentikasi JWT. Fitur
 ## 🔹 Stack Teknologi
 
 - PHP 8+
-- Laravel 10
+- Laravel 12
 - MySQL
 - JWT Authentication (`tymon/jwt-auth`)
 - Postman / cURL untuk testing
@@ -65,7 +65,7 @@ php artisan jwt:secret
 5. **Migrate database & seed data**
 
 ```bash
-php artisan migrate --seed
+php artisan db:seed
 ```
 
 * Seed akan membuat minimal 1 admin, 2 organizer, dan 1 event contoh.
