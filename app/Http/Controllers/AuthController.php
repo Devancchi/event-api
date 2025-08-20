@@ -43,15 +43,40 @@ class AuthController extends Controller
     // Logout
     public function logout()
     {
-        JWTAuth::logout();
-        return response()->json(['message' => 'Successfully logged out']);
+        try {
+            JWTAuth::parseToken()->invalidate();
+            return response()->json(['message' => 'Successfully logged out']);
+        } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
+            return response()->json(['error' => 'Token expired'], 401);
+        } catch (\Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
+            return response()->json(['error' => 'Token invalid'], 401);
+        } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
+            return response()->json(['error' => 'Token absent'], 401);
+        }
     }
+
 
     // Profil user yang sedang login
     public function me()
     {
-        return response()->json(JWTAuth::user());
+        try {
+            $user = JWTAuth::parseToken()->authenticate();
+
+            if (!$user) {
+                return response()->json(['error' => 'User not found'], 404);
+            }
+
+            return response()->json($user);
+        } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
+            return response()->json(['error' => 'Token expired'], 401);
+        } catch (\Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
+            return response()->json(['error' => 'Token invalid'], 401);
+        } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
+            return response()->json(['error' => 'Token absent'], 401);
+        }
     }
+
+
 
     // Helper untuk format response token
     protected function respondWithToken($token)
